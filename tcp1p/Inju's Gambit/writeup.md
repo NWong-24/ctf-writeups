@@ -198,5 +198,7 @@ contract Attack {
 ### Flag
 `TCP1P{is_it_really_a_gambit_tho_its_not_that_hard}`
 
+### Video
+https://www.youtube.com/watch?v=fTOcWpc1ObA
 
 
