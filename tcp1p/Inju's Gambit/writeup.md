@@ -13,6 +13,8 @@ function isSolved() public view returns(bool){
     return address(privileged.challengeManager()) == address(0);
 }
 ```
+
+## Approach
 It seems like our goal is to set the address of the challengeManager address in the privileged contract to the null address. I started working backwards and looked through Privileged.sol for a function that would be able to do that. Luckily for us, the fireManager function seems to do just that.
 ```solidity
 function fireManager() public onlyOwner{
