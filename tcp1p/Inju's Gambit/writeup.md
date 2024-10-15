@@ -27,7 +27,7 @@ However, in order to call fireManager, we first need to become the owner of the 
         }
     }
 ```
-The challengeCurrentOwner seems to do that. In order to become the new owner, we need two things: to be the chosen challenger, and the master key. `bytes32 private masterKey` shows us that the masterKey is a private variable; a private variable just means that it can't be accessed externally, but it is still public on the blockchain, which means that all we have to do is read it from there. In the Ethereum, a contract's state variables are stored in storage slots, which can each hold up to 32 bytes. We can read the slots to find the value of the masterKey.
+The challengeCurrentOwner seems to do that. In order to become the new owner, there are to conditions we have to meet: being the chosen challenger and having the master key. The `bytes32 private masterKey` shows us that the masterKey is a private variable. A private variable just means that it can't be accessed externally, but it is still public on the blockchain, which means that all we have to do is read it from there. In the Ethereum, a contract's state variables are stored in storage slots, which can each hold up to 32 bytes. By reading these slots, we can find the value of the master key.
 ```python
 from web3 import Web3
 
